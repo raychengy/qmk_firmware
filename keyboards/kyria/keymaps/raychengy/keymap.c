@@ -16,6 +16,9 @@
 #include QMK_KEYBOARD_H
 
 enum layers { _QWERTY_MAC = 0, _QWERTY_WIN, _LOWER, _RAISE, _ADJUST };
+uint16_t alt_gui_tab_timer = 0;
+bool     is_alt_tab_active = false;
+bool     is_gui_tab_active = false;
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -117,6 +120,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
+int get_current_layer(void) { return get_highest_layer(layer_state) >= _LOWER ? get_highest_layer(layer_state) : default_layer_state > 0 ? default_layer_state - 1 : default_layer_state; }
+
 #ifdef OLED_DRIVER_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) { return OLED_ROTATION_180; }
 
@@ -143,12 +148,13 @@ static void render_status(void) {
 
     // Host Keyboard Layer Status
     oled_write_P(PSTR("Layer: "), false);
-    switch (get_highest_layer(layer_state)) {
+    switch (get_current_layer()) {
         case _QWERTY_MAC:
             oled_write_P(PSTR("Default MacOSX\n"), false);
             break;
         case _QWERTY_WIN:
             oled_write_P(PSTR("Default Win\n"), false);
+            break;
         case _LOWER:
             oled_write_P(PSTR("Lower\n"), false);
             break;
@@ -160,6 +166,7 @@ static void render_status(void) {
             break;
         default:
             oled_write_P(PSTR("Undefined\n"), false);
+            break;
     }
 }
 
@@ -170,26 +177,156 @@ void oled_task_user(void) {
         render_kyria_logo();
     }
 }
-
-layer_state_t default_layer_state_set_user(layer_state_t state) { oled_task_user(); }
 #endif
 
 #ifdef ENCODER_ENABLE
+void volume_control(bool clockwise) {
+    if (clockwise) {
+        tap_code(KC_VOLU);
+    } else {
+        tap_code(KC_VOLD);
+    }
+}
+
+void scroll_pgup_pgdn(bool clockwise) {
+    if (clockwise) {
+        tap_code(KC_PGDN);
+    } else {
+        tap_code(KC_PGUP);
+    }
+}
+
+void scroll_horizontal_by_words(bool clockwise, bool is_mac) {
+    if (is_mac) {
+        if (clockwise) {
+            tap_code16(A(KC_RIGHT));
+        } else {
+            tap_code16(A(KC_LEFT));
+        }
+    } else {
+        if (clockwise) {
+            tap_code16(C(KC_RIGHT));
+        } else {
+            tap_code16(C(KC_LEFT));
+        }
+    }
+}
+
+void window_tabbing(bool clockwise, bool is_mac) {
+    if (is_mac) {
+        if (clockwise) {
+            if (!is_gui_tab_active) {
+                is_gui_tab_active = true;
+                register_code(KC_LGUI);
+            }
+            alt_gui_tab_timer = timer_read();
+            tap_code16(KC_TAB);
+        } else {
+            if (!is_gui_tab_active) {
+                is_gui_tab_active = true;
+                register_code(KC_LGUI);
+            }
+            alt_gui_tab_timer = timer_read();
+            tap_code16(S(KC_TAB));
+        }
+    } else {
+        if (clockwise) {
+            if (!is_alt_tab_active) {
+                is_alt_tab_active = true;
+                register_code(KC_LALT);
+            }
+            alt_gui_tab_timer = timer_read();
+            tap_code16(KC_TAB);
+        } else {
+            if (!is_alt_tab_active) {
+                is_alt_tab_active = true;
+                register_code(KC_LALT);
+            }
+            alt_gui_tab_timer = timer_read();
+            tap_code16(S(KC_TAB));
+        }
+    }
+}
+
 void encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
-        // Volume control
-        if (clockwise) {
-            tap_code(KC_VOLU);
-        } else {
-            tap_code(KC_VOLD);
+        switch (default_layer_state > 0 ? default_layer_state - 1 : default_layer_state) {
+            case _QWERTY_MAC:
+                switch (get_current_layer()) {
+                    case _LOWER:
+                        break;
+                    case _RAISE:
+                        break;
+                    case _ADJUST:
+                        volume_control(clockwise);
+                        break;
+                    default:
+                        window_tabbing(clockwise, true);
+                        break;
+                }
+                break;
+            case _QWERTY_WIN:
+                switch (get_current_layer()) {
+                    case _LOWER:
+                        break;
+                    case _RAISE:
+                        break;
+                    case _ADJUST:
+                        volume_control(clockwise);
+                        break;
+                    default:
+                        window_tabbing(clockwise, false);
+                        break;
+                }
+                break;
         }
     } else if (index == 1) {
-        // Page up/Page down
-        if (clockwise) {
-            tap_code(KC_PGDN);
-        } else {
-            tap_code(KC_PGUP);
+        switch (default_layer_state > 0 ? default_layer_state - 1 : default_layer_state) {
+            case _QWERTY_MAC:
+                switch (get_current_layer()) {
+                    case _LOWER:
+                        scroll_horizontal_by_words(clockwise, true);
+                        break;
+                    case _RAISE:
+                        break;
+                    case _ADJUST:
+                        break;
+                    default:
+                        scroll_pgup_pgdn(clockwise);
+                        break;
+                }
+                break;
+            case _QWERTY_WIN:
+                switch (get_current_layer()) {
+                    case _LOWER:
+                        scroll_horizontal_by_words(clockwise, false);
+                        break;
+                    case _RAISE:
+                        break;
+                    case _ADJUST:
+                        break;
+                    default:
+                        scroll_pgup_pgdn(clockwise);
+                        break;
+                }
+                break;
         }
     }
 }
 #endif
+
+void matrix_scan_user(void) {
+    if (is_alt_tab_active) {
+        if (timer_elapsed(alt_gui_tab_timer) > 1250) {
+            unregister_code(KC_LALT);
+            is_alt_tab_active = false;
+        }
+    }
+
+    if (is_gui_tab_active) {
+        if (timer_elapsed(alt_gui_tab_timer) > 1250) {
+            unregister_code(KC_LGUI);
+            is_gui_tab_active = false;
+        }
+    }
+}
