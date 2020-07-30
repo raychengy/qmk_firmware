@@ -16,9 +16,10 @@
 #include QMK_KEYBOARD_H
 
 enum layers { _QWERTY_MAC = 0, _QWERTY_WIN, _LOWER, _RAISE, _ADJUST };
-uint16_t alt_gui_tab_timer = 0;
-bool     is_alt_tab_active = false;
-bool     is_gui_tab_active = false;
+uint16_t alt_gui_tab_timer      = 0;
+bool     is_alt_tab_active      = false;
+bool     is_gui_tab_active      = false;
+bool     is_gui_backtick_active = false;
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -120,7 +121,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
-int get_current_layer(void) { return get_highest_layer(layer_state) >= _LOWER ? get_highest_layer(layer_state) : default_layer_state > 0 ? default_layer_state - 1 : default_layer_state; }
+int get_current_layer(void) { return get_highest_layer(layer_state) >= _LOWER ? get_highest_layer(layer_state) : default_layer_state >> 1; }
 
 #ifdef OLED_DRIVER_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) { return OLED_ROTATION_180; }
@@ -248,12 +249,31 @@ void window_tabbing(bool clockwise, bool is_mac) {
     }
 }
 
+void cycle_open_windows(bool clockwise) {
+    if (clockwise) {
+        if (!is_gui_backtick_active) {
+            is_gui_backtick_active = true;
+            register_code(KC_LGUI);
+        }
+        alt_gui_tab_timer = timer_read();
+        tap_code16(KC_GRAVE);
+    } else {
+        if (!is_gui_backtick_active) {
+            is_gui_backtick_active = true;
+            register_code(KC_LGUI);
+        }
+        alt_gui_tab_timer = timer_read();
+        tap_code16(S(KC_GRAVE));
+    }
+}
+
 void encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
-        switch (default_layer_state > 0 ? default_layer_state - 1 : default_layer_state) {
+        switch (default_layer_state >> 1) {
             case _QWERTY_MAC:
                 switch (get_current_layer()) {
                     case _LOWER:
+                        cycle_open_windows(clockwise);
                         break;
                     case _RAISE:
                         break;
@@ -281,7 +301,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                 break;
         }
     } else if (index == 1) {
-        switch (default_layer_state > 0 ? default_layer_state - 1 : default_layer_state) {
+        switch (default_layer_state >> 1) {
             case _QWERTY_MAC:
                 switch (get_current_layer()) {
                     case _LOWER:
@@ -327,6 +347,13 @@ void matrix_scan_user(void) {
         if (timer_elapsed(alt_gui_tab_timer) > 1250) {
             unregister_code(KC_LGUI);
             is_gui_tab_active = false;
+        }
+    }
+
+    if (is_gui_backtick_active) {
+        if (timer_elapsed(alt_gui_tab_timer) > 1250) {
+            unregister_code(KC_LGUI);
+            is_gui_backtick_active = false;
         }
     }
 }
