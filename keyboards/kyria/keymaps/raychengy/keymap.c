@@ -267,6 +267,30 @@ void cycle_open_windows(bool clockwise) {
     }
 }
 
+void cycle_between_browser_tabs(bool clockwise) {
+    if (clockwise) {
+        tap_code16(C(KC_TAB));
+    } else {
+        tap_code16(S(C(KC_TAB)));
+    }
+}
+
+void history_undo_redo(bool clockwise, bool is_mac) {
+    if (is_mac) {
+        if (clockwise) {
+            tap_code16(S(G(KC_Z)));
+        } else {
+            tap_code16(G(KC_Z));
+        }
+    } else {
+        if (clockwise) {
+            tap_code16(S(C(KC_Z)));
+        } else {
+            tap_code16(C(KC_Z));
+        }
+    }
+}
+
 void encoder_update_user(uint8_t index, bool clockwise) {
     if (index == 0) {
         switch (default_layer_state >> 1) {
@@ -276,6 +300,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                         cycle_open_windows(clockwise);
                         break;
                     case _RAISE:
+                        cycle_between_browser_tabs(clockwise);
                         break;
                     case _ADJUST:
                         volume_control(clockwise);
@@ -290,6 +315,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                     case _LOWER:
                         break;
                     case _RAISE:
+                        cycle_between_browser_tabs(clockwise);
                         break;
                     case _ADJUST:
                         volume_control(clockwise);
@@ -308,6 +334,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                         scroll_horizontal_by_words(clockwise, true);
                         break;
                     case _RAISE:
+                        history_undo_redo(clockwise, true);
                         break;
                     case _ADJUST:
                         break;
@@ -322,6 +349,7 @@ void encoder_update_user(uint8_t index, bool clockwise) {
                         scroll_horizontal_by_words(clockwise, false);
                         break;
                     case _RAISE:
+                        history_undo_redo(clockwise, false);
                         break;
                     case _ADJUST:
                         break;
