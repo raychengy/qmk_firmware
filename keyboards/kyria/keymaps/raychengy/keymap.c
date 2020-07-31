@@ -16,10 +16,13 @@
 #include QMK_KEYBOARD_H
 
 enum layers { _QWERTY_MAC = 0, _QWERTY_WIN, _LOWER, _RAISE, _ADJUST };
+
+#ifdef ENCODER_ENABLE
 uint16_t alt_gui_tab_timer      = 0;
 bool     is_alt_tab_active      = false;
 bool     is_gui_tab_active      = false;
 bool     is_gui_backtick_active = false;
+#endif
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -361,7 +364,6 @@ void encoder_update_user(uint8_t index, bool clockwise) {
         }
     }
 }
-#endif
 
 void matrix_scan_user(void) {
     if (is_alt_tab_active) {
@@ -385,3 +387,12 @@ void matrix_scan_user(void) {
         }
     }
 }
+#endif
+
+#ifdef RGBLIGHT_ENABLE
+void keyboard_post_init_user(void) {
+    rgblight_enable_noeeprom();  // Enables RGB, without saving settings
+    rgblight_sethsv_noeeprom(HSV_MAGENTA);
+    rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
+}
+#endif
