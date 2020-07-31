@@ -24,6 +24,17 @@ bool     is_gui_tab_active      = false;
 bool     is_gui_backtick_active = false;
 #endif
 
+/* Redefined the HSV COLORS due to an issue with the brightness
+ * crashing the keyboard when idle for too long.
+ */
+#ifdef RGBLIGHT_ENABLE
+#    define COLOR_MAGENTA 213, 245, 245
+#    define COLOR_TEAL 128, 245, 128
+#    define COLOR_SPRINGONION 106, 245, 245
+#    define COLOR_GOLDENROD 36, 245, 245
+#    define COLOR_ORANGE 28, 245, 245
+#endif
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
@@ -155,9 +166,11 @@ static void render_status(void) {
     switch (get_current_layer()) {
         case _QWERTY_MAC:
             oled_write_P(PSTR("Default MacOSX\n"), false);
+            rgblight_sethsv_noeeprom(COLOR_MAGENTA);
             break;
         case _QWERTY_WIN:
             oled_write_P(PSTR("Default Win\n"), false);
+            rgblight_sethsv_noeeprom(COLOR_TEAL);
             break;
         case _LOWER:
             oled_write_P(PSTR("Lower\n"), false);
@@ -390,9 +403,52 @@ void matrix_scan_user(void) {
 #endif
 
 #ifdef RGBLIGHT_ENABLE
+// clang-format off
+const rgblight_segment_t PROGMEM qwerty_mac_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, 20, COLOR_MAGENTA}
+);
+const rgblight_segment_t PROGMEM qwerty_win_layer[] = RGBLIGHT_LAYER_SEGMENTS(
+    {0, 20, COLOR_TEAL}
+);
+const rgblight_segment_t PROGMEM lower_layer[]      = RGBLIGHT_LAYER_SEGMENTS(
+    // Left
+    {8, 2, COLOR_SPRINGONION},
+    {5, 2, COLOR_SPRINGONION},
+    // Right
+    {18, 2, COLOR_SPRINGONION},
+    {15, 2, COLOR_SPRINGONION}
+);
+const rgblight_segment_t PROGMEM raise_layer[]      = RGBLIGHT_LAYER_SEGMENTS(
+    // Left
+    {0, 2, COLOR_GOLDENROD},
+    {3, 1, COLOR_GOLDENROD},
+    // Right
+    {10, 2, COLOR_GOLDENROD},
+    {13, 1, COLOR_GOLDENROD}
+);
+const rgblight_segment_t PROGMEM adjust_layer[]     = RGBLIGHT_LAYER_SEGMENTS(
+    // Left
+    {1, 2, COLOR_ORANGE},
+    {6, 2, COLOR_ORANGE},
+    // Right
+    {11, 2, COLOR_ORANGE},
+    {16, 2, COLOR_ORANGE}
+);
+// clang-format on
+const rgblight_segment_t* const PROGMEM my_rgb_layers[] = RGBLIGHT_LAYERS_LIST(qwerty_mac_layer, qwerty_win_layer, lower_layer, raise_layer, adjust_layer);
+
 void keyboard_post_init_user(void) {
+    rgblight_layers = my_rgb_layers;
     rgblight_enable_noeeprom();  // Enables RGB, without saving settings
-    rgblight_sethsv_noeeprom(HSV_MAGENTA);
+    rgblight_sethsv_noeeprom(COLOR_MAGENTA);
     rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    rgblight_set_layer_state(_LOWER, layer_state_cmp(state, _LOWER));
+    rgblight_set_layer_state(_RAISE, layer_state_cmp(state, _RAISE));
+    rgblight_set_layer_state(_ADJUST, layer_state_cmp(state, _ADJUST));
+
+    return state;
 }
 #endif
