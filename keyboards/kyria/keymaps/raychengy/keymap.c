@@ -28,11 +28,11 @@ bool     is_gui_backtick_active = false;
  * crashing the keyboard when idle for too long.
  */
 #ifdef RGBLIGHT_ENABLE
-#    define COLOR_MAGENTA 213, 245, 245
-#    define COLOR_TEAL 128, 245, 128
-#    define COLOR_SPRINGONION 106, 245, 245
-#    define COLOR_GOLDENROD 36, 245, 245
-#    define COLOR_ORANGE 28, 245, 245
+#    define COLOR_MAGENTA 213, 235, 235
+#    define COLOR_TEAL 128, 235, 128
+#    define COLOR_SPRINGONION 106, 235, 235
+#    define COLOR_GOLDENROD 36, 235, 235
+#    define COLOR_ORANGE 28, 235, 235
 #endif
 
 // clang-format off
@@ -112,9 +112,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *                        `----------------------------------'  `----------------------------------'
      */
     [_RAISE] = LAYOUT(
-        _______, _______, _______, _______, _______, _______,                                      KC_PAST,   KC_P7,   KC_P8,   KC_P9,  KC_PMNS, _______, \
-        _______, KC_MPRV, KC_MPLY, KC_MNXT, KC_VOLD, KC_VOLU,                                      KC_PSLS,   KC_P4,   KC_P5,   KC_P6,  KC_PPLS, _______, \
-        _______, _______, _______, _______, KC_MUTE, _______, _______, _______, _______, KC_PDOT,    KC_P0,   KC_P1,   KC_P2,   KC_P3,  KC_PEQL, _______, \
+        _______, _______, _______, _______, _______, _______,                                      KC_PAST,   KC_7,   KC_8,   KC_9,  KC_PMNS, _______, \
+        _______, KC_MPRV, KC_MPLY, KC_MNXT, KC_VOLD, KC_VOLU,                                      KC_PSLS,   KC_4,   KC_5,   KC_6,  KC_PPLS, _______, \
+        _______, _______, _______, _______, KC_MUTE, _______, _______, _______, _______, KC_PDOT,    KC_P0,   KC_1,   KC_2,   KC_3,  KC_PEQL, _______, \
                                    _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______ \
     ),
     /*
